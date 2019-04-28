@@ -1,0 +1,171 @@
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using NPOI.SS.Util;
+using NPOI.XSSF.UserModel;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace WarlmartSubmission
+{
+    public partial class Form1 : Form
+    {
+        
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+       
+
+        private async void XlsFile_Click(object sender, EventArgs e)
+        {
+            string sumbmissionFilePath;
+
+            OpenFileDialog openSubmissionFileDialog = new OpenFileDialog();
+            openSubmissionFileDialog.Title = "Open Execl File";
+            openSubmissionFileDialog.Filter = "Excel Files|*.xls";
+            openSubmissionFileDialog.InitialDirectory = @"C:\";
+
+            OpenFileDialog openSubmissionTenmplateFileDialog = new OpenFileDialog();
+            //openSubmissionTenmplateFileDialog.Title = "Open Execl File";
+            openSubmissionTenmplateFileDialog.Filter = "Excel Files|*.xlsm";
+            //openSubmissionTenmplateFileDialog.Filter = "Excel Files|*.xls";
+            openSubmissionTenmplateFileDialog.InitialDirectory = @"C:\";
+
+           if (openSubmissionFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    FileStream submissionFile = (FileStream)openSubmissionFileDialog.OpenFile();
+                    int totalLine = 0;
+                    int cuts = 10000;
+                    int numberOfCuts = totalLine / cuts;
+                    sumbmissionFilePath = submissionFile.Name;
+                    submissionFile.Close();
+                    try
+                    {
+                        if (openSubmissionTenmplateFileDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            try
+                            {
+                                FileStream submissionpPartTemplate = (FileStream)openSubmissionTenmplateFileDialog.OpenFile();
+                                for (int partCount = 1; partCount <= 3; partCount++)
+                                {
+                                    //await MakeANewCopy(xlsmFile, xlsmWorkBook, partCount);
+                                    await CutsAndMakeCopyies(sumbmissionFilePath, submissionpPartTemplate, partCount, cuts);
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Somethign went wrong at A. Error: " + ex.Message + " " + ex.ToString());
+                            }
+
+                        }
+                        
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show("Somethign went wrong at B . Error: " + ex.Message + " " + ex.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Somethign went wrong at C. Error: " + ex.Message + " " + ex.ToString());
+                }
+            }
+            
+        
+        }
+
+        private async Task CutsAndMakeCopyies(String sumbmissionFilePath, FileStream submissionTemplate, int partCount, int perCuts)
+        {
+            try
+            {
+                FileStream newXlsm = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xlsm", FileMode.Create, FileAccess.ReadWrite);
+                //FileStream newXlsm = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xls", FileMode.Create, FileAccess.ReadWrite);
+                await submissionTemplate.CopyToAsync(newXlsm);
+                submissionTemplate.Position = 0;
+                newXlsm.Close();
+                try
+                {
+                    newXlsm = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xlsm", FileMode.Open, FileAccess.ReadWrite);
+                    //newXlsm = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xls", FileMode.Open, FileAccess.ReadWrite);
+                    //XSSFWorkbook xlsmWorkBook = new XSSFWorkbook(newXlsm);
+                    XSSFWorkbook xlsmWorkBook = new XSSFWorkbook(newXlsm);
+                    newXlsm.Close();
+                    FileStream sumbmissionXls = new FileStream(sumbmissionFilePath, FileMode.Open, FileAccess.Read);
+                    HSSFWorkbook xlsWorkBook = new HSSFWorkbook(sumbmissionXls);
+                    sumbmissionXls.Close();
+                    FileStream newXlsm2 = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xlsm", FileMode.Create, FileAccess.Write);
+                    try
+                    {
+                         //newXlsm = new FileStream(@"C:\Users\Raymond\Documents\output-p" + partCount + ".xls", FileMode.Create, FileAccess.Write);
+                        ISheet newXlsmSheet1 = xlsmWorkBook.GetSheet("Garden & Patio");
+                        //ISheet newXlsmSheet1 = xlsmWorkBook.GetSheet("Sheet1");
+
+                        ISheet submissionSourceSheet1 = xlsWorkBook.GetSheetAt(0);
+                        int lastSumbissionCellNum = submissionSourceSheet1.GetRow(1).LastCellNum;
+                        for (int submissionRow = 1; submissionRow <= submissionSourceSheet1.LastRowNum; submissionRow++)
+                        {
+                            for(int submissionCol = 1; submissionCol <= lastSumbissionCellNum; submissionCol++)
+                            {
+                                if(submissionSourceSheet1.GetRow(submissionRow).GetCell(submissionCol) != null)
+                                {
+                                    ICell icell = submissionSourceSheet1.GetRow(submissionRow).GetCell(submissionCol);
+                                    IRow irow = newXlsmSheet1.GetRow(submissionRow + 5) ?? newXlsmSheet1.CreateRow(submissionRow + 5);
+                                    ICell icell2 = irow.GetCell(submissionCol + 1) ?? irow.CreateCell(submissionCol + 1);
+                                    if(icell.CellType== CellType.Boolean)
+                                        icell2.SetCellValue(icell.BooleanCellValue);
+                                    else
+                                    if (icell.CellType == CellType.Numeric)
+                                        icell2.SetCellValue(icell.NumericCellValue);
+                                    else
+                                    if (icell.CellType == CellType.String)
+                                        icell2.SetCellValue(icell.StringCellValue);
+                                }
+                            }
+                        }
+
+                        xlsmWorkBook.Write(newXlsm2);
+                        newXlsm.Close();
+                        MessageBox.Show("Part " + partCount);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Somethign went wrong at F. Error: " + ex.Message + " " + ex.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Somethign went wrong at D. Error: " + ex.Message + " " + ex.ToString());
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show("Somethign went wrong at E. Error: " + ex.Message + " " + ex.ToString());
+            }
+        }
+
+       
+        
+    }
+}
