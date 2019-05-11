@@ -286,6 +286,21 @@ namespace WindowsFormsApp
         {
             Application.Exit();
         }
+
+        private void purchaseOrderDetailBindingNavigatorSaveItem_Click(object sender, EventArgs e)
+        {
+            this.Validate();
+            this.purchaseOrderDetailBindingSource.EndEdit();
+            this.tableAdapterManager.UpdateAll(this.masterDataSet1);
+
+        }
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+            // TODO: This line of code loads data into the 'masterDataSet1.PurchaseOrderDetail' table. You can move, or remove it, as needed.
+            this.purchaseOrderDetailTableAdapter.Fill(this.masterDataSet1.PurchaseOrderDetail);
+
+        }
     }
 
 }

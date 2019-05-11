@@ -10,5 +10,9 @@
 &lt;/SerializableConnectionString&gt;</DesignTimeValue>
       <Value Profile="(Default)">Data Source=DESKTOP-6TR5TK1;Initial Catalog=master;Integrated Security=True</Value>
     </Setting>
+    <Setting Name="masterConnectionString2" Type="(Connection string)" Scope="Application">
+      <DesignTimeValue Profile="(Default)" />
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
